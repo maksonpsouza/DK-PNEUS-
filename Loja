@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DK Pneus - Master ADM v7.6</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #c10000; --dark: #111; --sidebar: #1a1a1a; --bg: #f4f7f6; --white: #fff; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; text-align: center; width: 350px; }
+        nav { width: 280px; background: var(--sidebar); color: white; display: none; flex-direction: column; }
+        .logo { padding: 30px 20px; text-align: center; border-bottom: 1px solid #333; }
+        nav ul { list-style: none; padding: 0; margin: 0; }
+        nav ul li { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #aaa; transition: 0.3s; }
+        nav ul li:hover, nav ul li.active { background: #222; color: white; border-left: 5px solid var(--primary); }
+        main { flex-grow: 1; padding: 40px; overflow-y: auto; display: none; }
+        .tab-content { display: none; max-width: 1200px; margin: 0 auto; }
+        .tab-content.active { display: block; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .field { display: flex; flex-direction: column; margin-bottom: 15px; }
+        label { font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; color: #666; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        input:required { border-right: 4px solid var(--primary); }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; justify-content: center; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-danger { background: #ffeded; color: #ff4d4d; }
+        .btn-toggle { width: 100%; padding: 20px; font-size: 1.2rem; }
+        .btn-toggle.off { background: #555; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 12px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-bottom: 2px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #f9f9f9; }
+        .pneu-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+        .badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+        .hidden { display: none; }
+        .concluido { background-color: #f8fcf9; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen">
+    <div class="login-card">
+        <h2>DK <span style="color:var(--primary)">PNEUS</span></h2>
+        <input type="password" id="passInput" placeholder="Senha Administrador">
+        <button class="btn btn-primary" style="width:100%; margin-top:10px" onclick="autenticar()">Entrar no Painel</button>
+        <p id="loginErro" style="color:var(--primary); display:none; margin-top:10px;">Acesso Negado</p>
+    </div>
+</div>
+
+<nav id="sidebar">
+    <div class="logo"><h3>DK <span>PNEUS</span></h3></div>
+    <ul>
+        <li onclick="showTab('gestao_loja')" id="btn-gestao_loja" class="active"><i class="fa-solid fa-shop"></i> Configurar Loja</li>
+        <li onclick="showTab('cadastro')" id="btn-cadastro"><i class="fa-solid fa-boxes-stacked"></i> Estoque do Site (Vitrine)</li>
+        <li onclick="showTab('pedidos')" id="btn-pedidos"><i class="fa-solid fa-bell"></i> Pedidos Online <span id="badgePedidos" class="badge">0</span></li>
+        <li onclick="showTab('backup')" id="btn-backup"><i class="fa-solid fa-database"></i> Backup</li>
+    </ul>
+</nav>
+
+<main id="contentArea">
+    <section id="gestao_loja" class="tab-content active">
+        <h2>Controle da Loja Virtual</h2>
+        <div class="card" style="text-align:center">
+            <h3>Status da Loja (Manual)</h3>
+            <button id="statusBtn" class="btn btn-toggle btn-success" onclick="toggleLoja()">
+                <i class="fa-solid fa-power-off"></i> <span id="statusTxt">LOJA ABERTA</span>
+            </button>
+            <p style="margin-top:10px; font-size:0.85rem; color:#666;">Seg-Sex (08:00-12:00 / 14:00-18:00) e Sáb (08:00-12:00)</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Banners (URL Canva)</h3>
+                <div class="field"><label>Link da Imagem</label><input type="text" id="bannerUrl"></div>
+                <button class="btn btn-primary" onclick="addBanner()" style="width:100%">Adicionar Banner</button>
+                <div id="listBanners" style="margin-top:15px"></div>
+            </div>
+            <div class="card">
+                <h3>Cupons de Desconto</h3>
+                <div class="field"><label>Código (Ex: DK10)</label><input type="text" id="cupomNome"></div>
+                <div class="field"><label>Valor R$ DESCONTO</label><input type="number" id="cupomValor"></div>
+                <button class="btn btn-success" onclick="addCupom()" style="width:100%">Salvar Cupom</button>
+                <div id="listCupons" style="margin-top:15px"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cadastro" class="tab-content">
+        <h2>Gestão de Produtos Online</h2>
+        <div class="card">
+            <h3 id="formTitle">Cadastrar na Vitrine</h3>
+            <input type="hidden" id="editId">
+            <div class="grid">
+                <div class="field"><label>Medida *</label><input type="text" id="pMedida" required></div>
+                <div class="field"><label>Marca *</label><input type="text" id="pMarca" required></div>
+                <div class="field"><label>Preço Site R$ *</label><input type="number" id="pPreco" step="0.01" required></div>
+                <div class="field"><label>Estoque Site *</label><input type="number" id="pQtd" required></div>
+                <div class="field" style="grid-column: span 2;"><label>Link da Foto *</label><input type="text" id="pFoto" required></div>
+            </div>
+            <div style="display:flex; gap:10px">
+                <button class="btn btn-primary" id="btnSalvar" onclick="salvarPneu()">Salvar Pneu no Site</button>
+                <button class="btn btn-danger hidden" id="btnCancelarEdit" onclick="cancelarEdicao()">Cancelar</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Lista de Pneus / Editar</h3>
+            <table id="tableEstoque">
+                <thead><tr><th>Foto</th><th>Item</th><th>Preço</th><th>Qtd</th><th>Ações</th></tr></thead>
+                <tbody id="bodyEstoque"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="pedidos" class="tab-content">
+        <h2>Pedidos Online Recebidos</h2>
+        <div class="card">
+            <table id="tablePedidos">
+                <thead><tr><th>Data</th><th>Cliente</th><th>Pneu</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody id="bodyPedidos"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="backup" class="tab-content">
+        <h2>Backup e Segurança</h2>
+        <div class="card">
+            <p>Baixe seus dados para segurança ou restaure de um arquivo anterior.</p>
+            <div style="display:flex; gap:15px;">
+                <button class="btn btn-success" onclick="fazerBackup()"><i class="fa-solid fa-download"></i> Baixar Dados (.json)</button>
+                <button class="btn btn-warning" onclick="document.getElementById('fileIn').click()"><i class="fa-solid fa-upload"></i> Restaurar Dados</button>
+                <input type="file" id="fileIn" style="display:none" onchange="restaurarBackup(this)">
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    let estoqueSite = JSON.parse(localStorage.getItem('dk_vitrine_site')) || [];
+    let pedidosSite = JSON.parse(localStorage.getItem('dk_pedidos_loja')) || [];
+    let bannersLoja = JSON.parse(localStorage.getItem('dk_banners')) || [];
+    let cuponsLoja = JSON.parse(localStorage.getItem('dk_cupons')) || [];
+    let lojaManual = JSON.parse(localStorage.getItem('dk_loja_manual')) ?? true;
+
+    // ESCUTA EM TEMPO REAL OS PEDIDOS DA LOJA
+    window.addEventListener('storage', (e) => {
+        if(e.key === 'dk_pedidos_loja') {
+            pedidosSite = JSON.parse(localStorage.getItem('dk_pedidos_loja')) || [];
+            renderPedidos();
+            atualizarNotificacao();
+        }
+    });
+
+    function autenticar() {
+        if(document.getElementById('passInput').value === "dk123") {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('contentArea').style.display = 'block';
+            renderAll();
+        } else { document.getElementById('loginErro').style.display = 'block'; }
+    }
+
+    function showTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('nav li').forEach(l => l.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('btn-' + id).classList.add('active');
+        if(id === 'pedidos') renderPedidos();
+    }
+
+    function toggleLoja() {
+        lojaManual = !lojaManual;
+        localStorage.setItem('dk_loja_manual', JSON.stringify(lojaManual));
+        renderAll();
+    }
+
+    function addBanner() {
+        const url = document.getElementById('bannerUrl').value;
+        if(url) { bannersLoja.push({ id: Date.now(), url }); localStorage.setItem('dk_banners', JSON.stringify(bannersLoja)); document.getElementById('bannerUrl').value = ''; renderBanners(); }
+    }
+
+    function addCupom() {
+        const code = document.getElementById('cupomNome').value.trim().toUpperCase();
+        const val = document.getElementById('cupomValor').value;
+        if(code && val) { cuponsLoja.push({ code, val: parseFloat(val) }); localStorage.setItem('dk_cupons', JSON.stringify(cuponsLoja)); document.getElementById('cupomNome').value = ''; document.getElementById('cupomValor').value = ''; renderCoupons(); }
+    }
+
+    function salvarPneu() {
+        const id = document.getElementById('editId').value;
+        const m = document.getElementById('pMedida').value, mc = document.getElementById('pMarca').value, pr = document.getElementById('pPreco').value, q = document.getElementById('pQtd').value, f = document.getElementById('pFoto').value;
+        if(!m || !mc || !pr || !q || !f) return alert("⚠️ Preencha todos os campos!");
+        const dados = { id: id ? parseInt(id) : Date.now(), medida: m, marca: mc, preco: parseFloat(pr), qtd: parseInt(q), foto: f };
+        if(id) { const idx = estoqueSite.findIndex(x => x.id === parseInt(id)); estoqueSite[idx] = dados; } else { estoqueSite.push(dados); }
+        localStorage.setItem('dk_vitrine_site', JSON.stringify(estoqueSite));
+        cancelarEdicao(); renderEstoque();
+    }
+
+    function editarPneu(id) {
+        const p = estoqueSite.find(x => x.id === id);
+        document.getElementById('editId').value = p.id;
+        document.getElementById('pMedida').value = p.medida;
+        document.getElementById('pMarca').value = p.marca;
+        document.getElementById('pPreco').value = p.preco;
+        document.getElementById('pQtd').value = p.qtd;
+        document.getElementById('pFoto').value = p.foto;
+        document.getElementById('formTitle').innerText = "Editando Item";
+        document.getElementById('btnSalvar').innerText = "Atualizar";
+        document.getElementById('btnCancelarEdit').classList.remove('hidden');
+        window.scrollTo(0,0);
+    }
+
+    function cancelarEdicao() {
+        document.getElementById('formTitle').innerText = "Cadastrar na Vitrine";
+        document.getElementById('editId').value = "";
+        document.getElementById('pMedida').value = ""; document.getElementById('pMarca').value = ""; document.getElementById('pPreco').value = ""; document.getElementById('pQtd').value = ""; document.getElementById('pFoto').value = "";
+        document.getElementById('btnSalvar').innerText = "Salvar Pneu no Site";
+        document.getElementById('btnCancelarEdit').classList.add('hidden');
+    }
+
+    function renderAll() {
+        const btn = document.getElementById('statusBtn');
+        btn.className = lojaManual ? "btn btn-toggle btn-success" : "btn btn-toggle off";
+        document.getElementById('statusTxt').innerText = lojaManual ? "LOJA ABERTA" : "LOJA FECHADA";
+        renderBanners(); renderCoupons(); renderEstoque(); renderPedidos(); atualizarNotificacao();
+    }
+
+    function renderBanners() { document.getElementById('listBanners').innerHTML = bannersLoja.map(b => `<div style="display:flex; gap:10px; margin-bottom:5px"><img src="${b.url}" style="width:100px; height:40px; object-fit:cover;"><button class="btn-danger" onclick="delB(${b.id})">X</button></div>`).join(''); }
+    function delB(id) { bannersLoja = bannersLoja.filter(x => x.id !== id); localStorage.setItem('dk_banners', JSON.stringify(bannersLoja)); renderBanners(); }
+
+    function renderCoupons() { document.getElementById('listCupons').innerHTML = cuponsLoja.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:5px; background:#f1f1f1; padding:5px;"><span><b>${c.code}</b> (R$ ${c.val})</span><button class="btn-danger" onclick="delC('${c.code}')">X</button></div>`).join(''); }
+    function delC(n) { cuponsLoja = cuponsLoja.filter(x => x.code !== n); localStorage.setItem('dk_cupons', JSON.stringify(cuponsLoja)); renderCoupons(); }
+
+    function renderEstoque() {
+        document.getElementById('bodyEstoque').innerHTML = estoqueSite.map(p => `<tr><td><img src="${p.foto}" class="pneu-thumb"></td><td><b>${p.medida}</b></td><td>R$ ${p.preco}</td><td>${p.qtd}</td><td><button class="btn-warning" onclick="editarPneu(${p.id})">✎</button> <button class="btn-danger" onclick="excluirPneu(${p.id})">🗑</button></td></tr>`).join('');
+    }
+    function excluirPneu(id) { if(confirm("Remover?")) { estoqueSite = estoqueSite.filter(x => x.id !== id); localStorage.setItem('dk_vitrine_site', JSON.stringify(estoqueSite)); renderEstoque(); } }
+
+    function renderPedidos() {
+        pedidosSite = JSON.parse(localStorage.getItem('dk_pedidos_loja')) || [];
+        document.getElementById('bodyPedidos').innerHTML = pedidosSite.map(p => `
+            <tr class="${p.status === 'concluido' ? 'concluido' : ''}">
+                <td>${p.data}</td>
+                <td><b>${p.cliente}</b></td>
+                <td>${p.pneu}</td>
+                <td>${p.status || 'Pendente'}</td>
+                <td style="display:flex; gap:5px">
+                    <button class="btn btn-success" title="Concluir" onclick="concluirP(${p.id})"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn btn-primary" title="Falar Zap" onclick="zapP('${p.whatsapp}')"><i class="fa-brands fa-whatsapp"></i></button>
+                    <button class="btn btn-danger" title="Excluir" onclick="delP(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+        atualizarNotificacao();
+    }
+
+    function concluirP(id) { const p = pedidosSite.find(x => x.id === id); p.status = 'concluido'; localStorage.setItem('dk_pedidos_loja', JSON.stringify(pedidosSite)); renderPedidos(); }
+    function delP(id) { if(confirm("Apagar?")) { pedidosSite = pedidosSite.filter(x => x.id !== id); localStorage.setItem('dk_pedidos_loja', JSON.stringify(pedidosSite)); renderPedidos(); } }
+    function zapP(num) { if(num) window.open(`https://wa.me/55${num.replace(/\D/g,'')}`); else alert("Sem número."); }
+
+    function atualizarNotificacao() { document.getElementById('badgePedidos').innerText = pedidosSite.filter(p => p.status !== 'concluido').length; }
+    
+    function fazerBackup() { 
+        const blob = new Blob([JSON.stringify({estoqueSite, pedidosSite, bannersLoja, cuponsLoja, lojaManual})], {type:'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "DK_BACKUP.json"; a.click(); 
+    }
+    
+    function restaurarBackup(input) {
+        const fr = new FileReader();
+        fr.onload = () => {
+            const d = JSON.parse(fr.result);
+            localStorage.setItem('dk_vitrine_site', JSON.stringify(d.estoqueSite || []));
+            localStorage.setItem('dk_pedidos_loja', JSON.stringify(d.pedidosSite || []));
+            localStorage.setItem('dk_banners', JSON.stringify(d.bannersLoja || []));
+            localStorage.setItem('dk_cupons', JSON.stringify(d.cuponsLoja || []));
+            localStorage.setItem('dk_loja_manual', JSON.stringify(d.lojaManual ?? true));
+            alert("Restauração Concluída!"); location.reload();
+        };
+        fr.readAsText(input.files[0]);
+    }
+</script>
+</body>
+</html>
